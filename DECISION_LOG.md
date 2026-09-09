@@ -11,7 +11,7 @@ one can refer to a particular instance.
 2. **Golden-set sampling is stratified, but not fully stratified** (`eval/build_golden_set.py`).
    15 percent of the sample consists of unstratified random top-ups in addition to the per-bucket quota. Certainly.
    stratification on a rough keyword bucket would systematically under-sample anything the
-   keyword classifier is bad at recognizing in the first place — exactly the cases most
+   keyword classifier is bad at recognizing in the first place - exactly the cases most
    worth having in eval.
 
 Other is a real intent having other as its own rule which always escalates.
@@ -69,7 +69,7 @@ For version v1, multi-turn context is deliberately not included. The pipeline re
 
 13. The judge's rubric includes four named dimensions: groundedness, correctness, tone, and
     Instead, they use separate actionability scores rather than a single overall "quality" score since a single number masks which
-    A component failed — for example, a reply can be exactly on-brand in terms of tone and yet remain ungrounded and
+    A component failed - for example, a reply can be exactly on-brand in terms of tone and yet remain ungrounded and
     To create a policy that isn't found in the historical data, debugging requires a breakdown.
 
 14. The degree of agreement between the judge and the human is determined using a simple Pearson correlation on a small
