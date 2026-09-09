@@ -1,84 +1,84 @@
 # Decision Log
 
-Plain list of non-obvious decisions and why. Numbered so REPORT.md and code comments
-can point back to a specific one.
+A list of the non-evident decisions along with the reasons for them. Included here for use in REPORT.md and in the code comments.
+one can refer to a particular instance.
 
-1. **Intent taxonomy came from reading messages, not guessing categories first.** I read
-   ~120 inbound customer tweets before writing `src/config.py`'s `INTENTS` list. Started
+1. The intent taxonomy was derived from reading the messages, not by first guessing the categories. I read
+   Before writing the `INTENTS` list in `src/config.py` there were about 120 inbound customer tweets. I started.
    with 12 categories, merged down to 8 once several turned out to be near-duplicates
-   (e.g. "can't log in" and "account locked" collapsed into `account_access`).
+   For example, 'can't log in' and 'account locked' are combined under `account_access`.
 
-2. **Golden-set sampling is stratified but not purely stratified** (`eval/build_golden_set.py`).
-   15% of the sample is unstratified random top-up on top of the per-bucket quota. Pure
+2. **Golden-set sampling is stratified, but not fully stratified** (`eval/build_golden_set.py`).
+   15 percent of the sample consists of unstratified random top-ups in addition to the per-bucket quota. Certainly.
    stratification on a rough keyword bucket would systematically under-sample anything the
    keyword classifier is bad at recognizing in the first place — exactly the cases most
    worth having in eval.
 
-3. **`other` is a real intent with `other` as its own always-escalate rule**, not a
-   catch-all that gets auto-handled with a generic reply. An agent that's uncertain what
-   the customer wants and replies anyway is worse than one that admits it and hands off.
+Other is a real intent having other as its own rule which always escalates.
+   A catch-all item which is automatically dealt with by a general reply. The case of an agent who doesn't know what
+   It is better for the customer to admit it and transfer the issue than it is for them to say they want it and then reply.
 
-4. **Retrieval uses TF-IDF, not a hosted embedding model.** Two reasons, in priority order:
-   (a) inspectability — for a system that will touch real customers, "why did it say that"
+4. The retrieval process uses TF-IDF and not a hosted embedding model. This is for the following two reasons, ranked in order of priority:
+   (a) inspectability - for a system that will touch real customers, "why did it say that"
    needs to trace to an exact historical tweet, and (b) this dev sandbox has no route to
-   embedding-model hosts, so TF-IDF was also the only thing I could actually test today.
+   Since the embedding model hosts were the only option, I was also able to test only the TF-IDF.
    I'd revisit this with a real embedding model once (a) is still satisfied via a
    citation/highlighting UI on top.
 
-5. **Reply drafting is explicitly told not to invent policy that contradicts the retrieved
-   examples**, and to say "DM us" only if the retrieved examples do the same. Early drafts
+5. It is specifically stated that reply drafting should not invent policy which contradicts the retrieved
+   Examples, and in each case it is only necessary to say "DM us" if the examples that have been retrieved also do so. Early drafts
    without this instruction fabricated plausible-sounding refund percentages that don't
-   appear anywhere in the actual historical replies.
+   Turn up in the real historical replies.
 
-6. **Escalation policy is deterministic Python, not an LLM call** (`src/policy.py`). The
+The escalation policy is deterministic Python, not a call to an LLM (in src/policy.py). The
    layer whose entire job is "catch this before it reaches a customer" shouldn't be able
-   to fail in correlated ways with the layer it's checking.
+   to fail in a way that is correlated with the layer it is checking.
 
-7. **Stacking order in the escalation policy matters and is intentional**: hard keyword
+7. The order in which the escalation policy steps are stacked is important and has been deliberately chosen: hard keyword
    signals (legal threat, self-harm, fraud) are checked before intent, before confidence
-   threshold, before the money/warranty review-required bucket. A high-confidence
-   classification of a message that also mentions "lawyer" should never auto-handle.
+   At the threshold, prior to the money/warranty review-required bucket. A high-confidence
+   The message should never be automatically handled if it refers to a 'lawyer'.
 
-8. **`warranty_billing` never fully auto-sends**, even at high confidence
-   (`REVIEW_REQUIRED_INTENTS` in `src/policy.py`). The reply is still auto-drafted (so a
-   human isn't starting from scratch), but a human approves before it goes out. Money and
-   warranty claims create real liability if the model is confidently wrong.
+The warranty_billing feature never fully auto-sends, even when the confidence level is high.
+   The review is still automatically drafted (so a
+   a human doesn't have to start from scratch, but approval from a human is required before it is released. Money and
+   There is actual liability involved when warranty claims are made on the basis of the model being definitely incorrect.
 
-9. **The whole pipeline degrades gracefully with no `ANTHROPIC_API_KEY` set**, falling back
-   to a keyword classifier and closest-historical-reply drafting. This was worth building
+9. The entire pipeline works smoothly even if the ANTHROPIC_API_KEY is not set, switching to a fallback mechanism
+   to a keyword classifier and one that drafts the most closely matching historical reply. This was worth the effort of building
    because it means a first read-through, a CI smoke test, or a grader without API budget
-   never blocks on secrets — but every fallback output is tagged (`method: keyword_fallback`,
-   or a literal `[OFFLINE STUB]` string) so it can never quietly get counted as a real result.
+   never blocks on secrets - but every fallback output is tagged (`method: keyword_fallback`,
+   or a literal `[OFFLINE STUB]` string, so that it can never be counted as a real result without being noticed.
 
-10. **The "simple" baseline reuses the same TF-IDF retriever as the real system**, just
-    without LLM drafting or LLM classification. This isolates one specific question: how
-    much is the LLM actually adding over cheap retrieval + keyword rules? If the gap is
-    small, that's an important, uncomfortable thing to report, not to bury.
+10. **The simple baseline makes use of the same TF-IDF retriever as the actual system**, just
+    Without the use of LLMs for drafting or for classification, we can focus on one particular question: how
+    How much does the LLM actually add on top of using cheap retrieval combined with keyword rules? If the gap is
+    It's small and that's an important and uncomfortable thing to have to report, not to bury.
 
-11. **Confidence threshold for auto-handle is 0.75, not tuned to maximize an F1 on the
-    golden set.** Threshold-tuning against your own eval set is a fast way to overstate
-    generalization. 0.75 is a starting point stated as a hypothesis in the report, to be
-    revisited once there's a larger, real-data golden set to check it against — not
-    optimized against the same 200 examples used to report results.
+11. The confidence threshold for auto-handle is 0.75, not having been tuned to maximise an F1 score.
+    The golden set. Adjusting the threshold using your own evaluation set is a quick way of overestimating
+    0.75 is given in the report as a hypothesis and stated as a starting point.
+    revisited once there's a larger, real-data golden set to check it against - not
+    Optimized using the same 200 examples that were used to report the results.
 
-12. **Multi-turn context is intentionally out of scope for v1.** The pipeline replies to a
-    single customer message using retrieved single-turn precedent. Real threads often have
+For version v1, multi-turn context is deliberately not included. The pipeline responds to a
+    A single-customer message is created using the retrieved single-turn precedent. Generally, real threads have
     2-3 back-and-forths before resolution; grounding on the full thread would improve
     correctness but roughly doubles the surface area of what needs auditing before trusting
-    it. Documented as a "chose not to build" item, not an oversight.
+    It is listed as an item that had chosen not to be built, not as a mistake.
 
-13. **Judge rubric has 4 named dimensions (groundedness, correctness, tone,
-    actionability) instead of one holistic "quality" score.** A single number hides which
-    part failed — e.g. a reply can be perfectly on-brand in tone while being ungrounded and
-    inventing a policy that isn't in the historical data. Debugging needs the breakdown.
+13. The judge's rubric includes four named dimensions: groundedness, correctness, tone, and
+    Instead, they use separate actionability scores rather than a single overall "quality" score since a single number masks which
+    A component failed — for example, a reply can be exactly on-brand in terms of tone and yet remain ungrounded and
+    To create a policy that isn't found in the historical data, debugging requires a breakdown.
 
-14. **Judge-human agreement is measured with a plain Pearson correlation on a small
+14. The degree of agreement between the judge and the human is determined using a simple Pearson correlation on a small
     sample**, not a fancier statistic, and the harness refuses to report agreement below
-    ~10 labeled examples. A precise-looking kappa on 8 data points is worse than an honest
+    There are about 10 labeled examples; a kappa value that appears precise based on 8 data points is in fact worse than an honest one.
     "not enough data yet."
 
-15. **Seed/demo data ships with ground-truth columns (`intent_true`, `resolved_true`) that
+15. The seed/demo data includes columns containing the ground truth (intent_true, resolved_true) that
     the real Kaggle file does not have**, used only by a clearly-named dev-only script
-    (`eval/_devonly_autofill_seed_labels.py`) to smoke-test the harness before real
-    hand-labeling. Every place that could accidentally treat this as a real label is
-    commented to say explicitly that it isn't.
+    To smoke-test the harness before real
+    By manually labeling. Every situation in which this might accidentally be taken as a real label is
+    said outright that it isn't.
