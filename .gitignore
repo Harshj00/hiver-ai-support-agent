@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+data/twcs.csv
+.env
+eval/results_*.csv
+eval/judge_scores_latest.csv
